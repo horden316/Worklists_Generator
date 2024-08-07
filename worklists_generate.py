@@ -1,7 +1,7 @@
 import datetime
 from pydicom.dataset import Dataset, FileDataset
-from pydicom.uid import generate_uid
-from pynetdicom import AE, evt, StoragePresentationContexts
+from pydicom.uid import generate_uid, ExplicitVRLittleEndian
+from pynetdicom import AE, evt, StoragePresentationContexts, VerificationPresentationContexts, QueryRetrievePresentationContexts
 
 def create_modality_worklist(patient_name, patient_id, accession_number, study_instance_uid):
     # 設定DICOM標籤和值
@@ -22,15 +22,15 @@ def create_modality_worklist(patient_name, patient_id, accession_number, study_i
     file_meta = Dataset()
     file_meta.MediaStorageSOPClassUID = '1.2.840.10008.5.1.4.31'
     file_meta.MediaStorageSOPInstanceUID = generate_uid()
-    file_meta.ImplementationClassUID = generate_uid()
+    file_meta.ImplementationClassUID = '1.2.3.4.5.6.7.8.9.0'  # 固定的UID
 
     # 創建DICOM文件
-    filename = f'MWL_{patient_id}.dcm'
-    ds = FileDataset(filename, {}, file_meta=file_meta, preamble=b'\0' * 128)
+    filename = f'MWL_{patient_id}.wl'
+    ds = FileDataset(filename, ds, file_meta=file_meta, preamble=b'\0' * 128)
     ds.is_little_endian = True
-    ds.is_implicit_VR = True
+    ds.is_implicit_VR = False
 
-    ds.save_as(filename)
+    ds.save_as(filename, write_like_original=False)
     print(f"Modality Worklist saved as {filename}")
 
     return ds
@@ -44,7 +44,7 @@ def handle_store(event):
 
 def start_scp():
     ae = AE()
-    ae.supported_contexts = StoragePresentationContexts
+    ae.supported_contexts = StoragePresentationContexts + VerificationPresentationContexts + QueryRetrievePresentationContexts
     handlers = [(evt.EVT_C_STORE, handle_store)]
     ae.start_server(('', 11112), block=True, evt_handlers=handlers)
 
