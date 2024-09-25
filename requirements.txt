@@ -2,3 +2,4 @@ pydicom
 pynetdicom
 fastapi
 pydantic
+uvicorn
