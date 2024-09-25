@@ -1,2 +1,4 @@
 pydicom
 pynetdicom
+fastapi
+pydantic
