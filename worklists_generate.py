@@ -32,7 +32,7 @@ def create_modality_worklist(patient_name, patient_id, accession_number, study_i
     ds.is_little_endian = True
     ds.is_implicit_VR = False
 
-    ds.save_as(filename, write_like_original=False)
+    ds.save_as(filename, write_like_original=False, encoding='utf-8')
     print(f"Modality Worklist saved as {filename}")
 
     return ds
