@@ -76,7 +76,7 @@ def start_scp():
     except Exception as e:
         print(f"Error starting server: {e}")
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
     # 示例用法
     #mwl = create_modality_worklist('張三', '123456', '654321', generate_uid(), 'M')
     # 啟動SCP
