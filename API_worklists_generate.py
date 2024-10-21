@@ -24,10 +24,11 @@ async def create_worklist(worklist: WorklistRequest):
         patient_id = worklist.patient_id
         accession_number = worklist.accession_number
         patient_sex = worklist.patient_sex
+        patient_birth_date = worklist.patient_birth_date
 
         # 呼叫 Script 的函數，或者你也可以選擇用 subprocess 來呼叫外部 Script
         from worklists_generate import create_modality_worklist
-        create_modality_worklist(patient_name, patient_id, accession_number, patient_sex)
+        create_modality_worklist(patient_name, patient_id, accession_number, patient_sex, patient_birth_date)
 
         # .wl 檔案的路徑（假設檔案名與 patient_id 有關）
         filename = f'MWL_{patient_id}.wl'
