@@ -14,27 +14,32 @@ def create_modality_worklist(patient_name, patient_id, accession_number, study_i
     # 直接賦值，pydicom 會自動處理編碼
     ds.PatientName = patient_name
     ds.PatientID = patient_id
-    ds.AccessionNumber = accession_number
+    ds.PatientSex = patient_sex
+    
+    # 檢查資訊
     ds.StudyInstanceUID = study_instance_uid
-    ds.PatientSex = patient_sex  # 新增PatientSex標籤
+    ds.AccessionNumber = accession_number
+    ds.StudyDate = datetime.date.today().strftime('%Y%m%d')
+    ds.StudyTime = datetime.datetime.now().strftime('%H%M%S')
     ds.Modality = 'CT'
+    
+    # Scheduled Procedure Step Sequence
     ds.ScheduledProcedureStepSequence = [Dataset()]
     sps = ds.ScheduledProcedureStepSequence[0]
     sps.ScheduledStationAETitle = 'LELTEK'
     sps.ScheduledProcedureStepStartDate = datetime.date.today().strftime('%Y%m%d')
     sps.ScheduledProcedureStepStartTime = datetime.datetime.now().strftime('%H%M%S')
-    
-    # 中文字段直接賦值
     sps.ScheduledPerformingPhysicianName = ''
-    sps.ScheduledProcedureStepDescription = ''
+    sps.ScheduledProcedureStepDescription = 'CT SCAN'
+    sps.ScheduledProcedureStepID = accession_number
+    sps.Modality = 'CT'
     
-    # 設定文件元信息
     file_meta = Dataset()
     file_meta.MediaStorageSOPClassUID = '1.2.840.10008.5.1.4.31'
     file_meta.MediaStorageSOPInstanceUID = generate_uid()
-    file_meta.ImplementationClassUID = '1.2.3.4.5.6.7.8.9.0'  # 固定的UID
+    file_meta.ImplementationClassUID = '1.2.3.4.5.6.7.8.9.0'
     file_meta.TransferSyntaxUID = ExplicitVRLittleEndian
-
+    
     # 創建DICOM文件
     filename = f'MWL_{patient_id}.wl'
     ds = FileDataset(filename, ds, file_meta=file_meta, preamble=b'\0' * 128)
@@ -45,6 +50,14 @@ def create_modality_worklist(patient_name, patient_id, accession_number, study_i
         # 使用UTF-8保存文件
         ds.save_as(filename, write_like_original=False)
         print(f"Modality Worklist saved as {filename}")
+        
+        # 讀取並印出文件內容以驗證
+        print("\nVerifying file contents:")
+        verified_ds = pydicom.dcmread(filename)
+        print(f"Patient Name: {verified_ds.PatientName}")
+        print(f"Patient ID: {verified_ds.PatientID}")
+        print(f"Accession Number: {verified_ds.AccessionNumber}")
+        
     except Exception as e:
         print(f"Error saving file: {e}")
     
@@ -54,12 +67,8 @@ def handle_store(event):
     try:
         ds = event.dataset
         ds.file_meta = event.file_meta
-        
-        # 檢查字符集
         if hasattr(ds, 'SpecificCharacterSet'):
             print(f"Received dataset with character set: {ds.SpecificCharacterSet}")
-        
-        # 印出接收到的DICOM數據集
         print(ds)
         return 0x0000
     except Exception as e:
@@ -70,14 +79,11 @@ def start_scp():
     ae = AE()
     ae.supported_contexts = StoragePresentationContexts + VerificationPresentationContexts + QueryRetrievePresentationContexts
     handlers = [(evt.EVT_C_STORE, handle_store)]
-    
     try:
         ae.start_server(('', 11112), block=True, evt_handlers=handlers)
     except Exception as e:
         print(f"Error starting server: {e}")
 
-#if __name__ == "__main__":
-    # 示例用法
-    #mwl = create_modality_worklist('張三', '123456', '654321', generate_uid(), 'M')
-    # 啟動SCP
-    #start_scp()
+if __name__ == "__main__":
+    # 測試用例
+    mwl = create_modality_worklist('陳x明', '123456', '654321', generate_uid(), 'M')
